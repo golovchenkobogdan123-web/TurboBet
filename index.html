@@ -15,6 +15,13 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        const user = tg.initDataUnsafe.user;
+if (user) {
+    document.getElementById('user-username').innerText = user.username || user.first_name;
+    const initials = user.first_name.charAt(0);
+    document.getElementById('user-avatar').innerText = initials;
+}
+
     </script>
 </body>
 </html>
