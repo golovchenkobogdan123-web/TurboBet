@@ -32,9 +32,21 @@
 
         const user = tg.initDataUnsafe.user;
         console.log(user); // Виведення даних у консоль для перевірки
-document.getElementById('daily-case-btn').addEventListener('click', () => {
-    alert('Кейс відкрито! Ви отримали бонуси.');
+бонуси.');
+    document.getElementById('daily-case-btn').addEventListener('click', () => {
+    const min = 0.1;
+    const max = 1.0;
+    const prize = (Math.random() * (max - min) + min).toFixed(2);
+
+    let currentBalance = parseFloat(document.getElementById('balance').innerText);
+    currentBalance += parseFloat(prize);
+
+    document.getElementById('balance').innerText = currentBalance.toFixed(2);
+
+    alert(`Кейс відкрито! Ви виграли ${prize} TON!`);
 });
+``` Після збереження не забудь зробити commit змін на GitHub.
+
 
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
