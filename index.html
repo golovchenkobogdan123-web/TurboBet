@@ -299,6 +299,10 @@
             background: linear-gradient(135deg, #ef4444, #b91c1c);
             box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
         }
+        .btn-action.cancel {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+        }
         .btn-action:active {
             transform: scale(0.97);
         }
@@ -747,12 +751,32 @@
         document.getElementById('close-bet-modal').addEventListener('click', () => betModal.style.display = 'none');
 
         document.getElementById('btn-place-bet').addEventListener('click', () => {
-            if ((gamePhase === 'waiting' && !isBetPlaced) || (gamePhase === 'flying' && !isBetPlaced && !isNextRoundBetPlaced)) {
+            if (gamePhase === 'waiting' && !isBetPlaced) {
                 betModal.style.display = 'flex';
-            } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
-                triggerCashout();
+            } else if (gamePhase === 'flying') {
+                if (isBetPlaced && !isCashedOut) {
+                    triggerCashout();
+                } else if (!isBetPlaced && !isNextRoundBetPlaced) {
+                    betModal.style.display = 'flex';
+                } else if (!isBetPlaced && isNextRoundBetPlaced) {
+                    cancelNextRoundBet();
+                }
             }
         });
+
+        function cancelNextRoundBet() {
+            if (isNextRoundBetPlaced) {
+                userBalance += nextRoundBetAmount;
+                nextRoundBetAmount = 0.00;
+                isNextRoundBetPlaced = false;
+                updateBalance();
+
+                const btn = document.getElementById('btn-place-bet');
+                btn.innerText = 'Place Bet for Next Round';
+                btn.classList.remove('cancel');
+                btn.disabled = false;
+            }
+        }
 
         document.getElementById('btn-confirm-bet').addEventListener('click', () => {
             const val = parseFloat(document.getElementById('bet-amount').value);
@@ -787,8 +811,9 @@
                 updateBalance();
 
                 const btn = document.getElementById('btn-place-bet');
-                btn.innerText = 'Bet Placed (Next Round)';
-                btn.disabled = true;
+                btn.innerText = 'Bet Placed (Next Round) - Tap to Cancel';
+                btn.classList.add('cancel');
+                btn.disabled = false;
 
                 betModal.style.display = 'none';
             }
@@ -852,6 +877,7 @@
             document.getElementById('multiplier-text').innerText = 'x1.00';
             
             const btn = document.getElementById('btn-place-bet');
+            btn.classList.remove('cancel');
 
             if (isNextRoundBetPlaced) {
                 isBetPlaced = true;
@@ -900,13 +926,17 @@
                 btn.disabled = false;
                 btn.innerText = 'Cashout';
                 btn.classList.add('cashout');
+                btn.classList.remove('cancel');
             } else if (isNextRoundBetPlaced) {
-                btn.disabled = true;
-                btn.innerText = 'Bet Placed (Next Round)';
+                btn.disabled = false;
+                btn.innerText = 'Bet Placed (Next Round) - Tap to Cancel';
+                btn.classList.add('cancel');
+                btn.classList.remove('cashout');
             } else {
                 btn.disabled = false;
-                btn.innerText = 'Place Bet';
+                btn.innerText = 'Place Bet for Next Round';
                 btn.classList.remove('cashout');
+                btn.classList.remove('cancel');
             }
 
             particleTimer = setInterval(spawnParticle, 50);
@@ -964,12 +994,14 @@
 
                 const btn = document.getElementById('btn-place-bet');
                 if (isNextRoundBetPlaced) {
-                    btn.innerText = 'Bet Placed (Next Round)';
+                    btn.innerText = 'Bet Placed (Next Round) - Tap to Cancel';
+                    btn.classList.add('cancel');
                     btn.classList.remove('cashout');
-                    btn.disabled = true;
+                    btn.disabled = false;
                 } else {
-                    btn.innerText = `Cashed Out (+${winnings.toFixed(2)})`;
+                    btn.innerText = 'Place Bet for Next Round';
                     btn.classList.remove('cashout');
+                    btn.classList.remove('cancel');
                     btn.disabled = false;
                 }
             }
