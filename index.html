@@ -70,6 +70,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
         }
         .games-grid {
             display: grid;
@@ -127,6 +128,26 @@
             height: 100%;
             width: 100%;
             gap: 30px;
+        }
+        .btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid #334155;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+        .btn-back:hover {
+            color: var(--text);
+            background-color: #334155;
         }
         .rocket-container {
             position: relative;
@@ -243,6 +264,10 @@
 
         <!-- Rocket Game Screen -->
         <div id="rocket-screen" class="rocket-screen" style="display: none;">
+            <button id="btn-back" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                Back
+            </button>
             <div class="rocket-container">
                 <div id="rocket-img" class="rocket-icon">🚀</div>
                 <div id="rocket-multiplier" class="multiplier">x1.00</div>
@@ -289,10 +314,16 @@
         const dashboardScreen = document.getElementById('dashboard-screen');
         const rocketScreen = document.getElementById('rocket-screen');
         const rocketGameCard = document.getElementById('rocket-game-card');
+        const btnBack = document.getElementById('btn-back');
 
         rocketGameCard.addEventListener('click', () => {
             dashboardScreen.style.display = 'none';
             rocketScreen.style.display = 'flex';
+        });
+
+        btnBack.addEventListener('click', () => {
+            rocketScreen.style.display = 'none';
+            dashboardScreen.style.display = 'grid';
         });
 
         const btnBet = document.getElementById('btn-bet');
