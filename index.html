@@ -454,6 +454,7 @@
 
             <div class="input-group">
                 <input type="number" id="bet-amount" class="input-field" placeholder="Bet amount (GRAM)" min="0.1" step="0.1" value="1.0">
+                <input type="number" id="auto-cashout" class="input-field" placeholder="Auto Cashout (x)" min="1.01" step="0.1">
             </div>
             <button id="btn-place-bet" class="btn-action">Place Bet</button>
 
@@ -537,6 +538,7 @@
         let particleTimer = null;
         let countdownTimer = null;
         let userBetRecord = null;
+        let autoCashedOut = false;
 
         const user = tg.initDataUnsafe.user;
         if (user) {
@@ -576,7 +578,7 @@
             userBalance += gramAdded;
             updateBalance();
             depositModal.style.display = 'none';
-            alert(`Demo Mode: Added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars.\n\nNote: Real Telegram Stars payment requires server-side integration with the Telegram Bot API (createInvoiceLink) to process real payments.`);
+            alert(`Demo Mode: Added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars.`);
         }
 
         function updateBalance() {
@@ -620,6 +622,7 @@
             isBetPlaced = false;
             isCashedOut = false;
             userBetRecord = null;
+            autoCashedOut = false;
             
             document.getElementById('rocket-img').classList.remove('flying');
             document.getElementById('multiplier-text').classList.remove('crashed');
@@ -667,6 +670,15 @@
                 currentMultiplier += 0.02;
                 document.getElementById('multiplier-text').innerText = 'x' + currentMultiplier.toFixed(2);
 
+                const autoCashoutVal = parseFloat(document.getElementById('auto-cashout').value);
+
+                if (isBetPlaced && !isCashedOut && !autoCashedOut && !isNaN(autoCashoutVal) && autoCashoutVal > 1.0) {
+                    if (currentMultiplier >= autoCashoutVal) {
+                        autoCashedOut = true;
+                        triggerCashout();
+                    }
+                }
+
                 if (currentMultiplier >= crashPoint) {
                     endFlightPhase();
                 }
@@ -690,6 +702,23 @@
             setTimeout(() => {
                 startBettingPhase();
             }, 3000);
+        }
+
+        function triggerCashout() {
+            if (isBetPlaced && !isCashedOut) {
+                isCashedOut = true;
+                const winnings = currentBet * currentMultiplier;
+                userBalance += winnings;
+                updateBalance();
+
+                if (userBetRecord) userBetRecord.mult = currentMultiplier.toFixed(2);
+                renderBets();
+
+                const btn = document.getElementById('btn-place-bet');
+                btn.innerText = `Cashed Out (+${winnings.toFixed(2)})`;
+                btn.classList.remove('cashout');
+                btn.disabled = true;
+            }
         }
 
         document.getElementById('btn-place-bet').addEventListener('click', () => {
@@ -716,18 +745,7 @@
                 btn.innerText = 'Bet Placed (Waiting...)';
                 btn.disabled = true;
             } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
-                isCashedOut = true;
-                const winnings = currentBet * currentMultiplier;
-                userBalance += winnings;
-                updateBalance();
-
-                if (userBetRecord) userBetRecord.mult = currentMultiplier.toFixed(2);
-                renderBets();
-
-                const btn = document.getElementById('btn-place-bet');
-                btn.innerText = `Cashed Out (+${winnings.toFixed(2)})`;
-                btn.classList.remove('cashout');
-                btn.disabled = true;
+                triggerCashout();
             }
         });
 
