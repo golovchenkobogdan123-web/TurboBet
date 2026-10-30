@@ -16,7 +16,7 @@
             </div>
             <div class="balance-container">
                 <div class="balance-title">Баланс:</div>
-                <div id="balance" class="balance-value">1000</div>
+                <div id="balance" class="balance-value">0</div>
             </div>
         </div>
         <div id="game-container"></div>
@@ -27,9 +27,10 @@
 
         const user = tg.initDataUnsafe.user;
         if (user) {
-            document.getElementById('user-username').innerText = user.username || user.first_name;
-            const initials = user.first_name.charAt(0);
-            document.getElementById('user-avatar').innerText = initials;
+            document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
+            if (user.first_name) {
+                document.getElementById('user-avatar').innerText = user.first_name.charAt(0);
+            }
         }
     </script>
 </body>
