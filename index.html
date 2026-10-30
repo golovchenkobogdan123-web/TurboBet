@@ -15,7 +15,6 @@
             --accent: #22c55e;
             --danger: #ef4444;
             --purple: #a855f7;
-            --fire-orange: #fd7e14;
         }
         * {
             box-sizing: border-box;
@@ -171,52 +170,66 @@
             border: 1px solid #334155;
             position: relative;
             margin-bottom: 16px;
+            overflow: hidden;
         }
-        .rocket-container {
+        .rocket-wrapper {
             position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: inline-block;
         }
         .rocket-icon {
             font-size: 64px;
+            margin-bottom: 12px;
+            transition: transform 0.3s ease;
             position: relative;
             z-index: 2;
-            transition: transform 0.3s ease;
         }
         .rocket-icon.flying {
             animation: floatRocket 1s ease-in-out infinite alternate;
             filter: drop-shadow(0 0 15px var(--primary));
         }
-        .fire-trail {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 60px;
-            background: linear-gradient(to bottom, var(--fire-orange), #ffc107, transparent);
-            opacity: 0;
-            z-index: 1;
-            border-radius: 0 0 50% 50% / 0 0 20% 20%;
-            filter: blur(4px);
-        }
-        .flying .fire-trail {
-            animation: burnFire 0.4s ease-in-out infinite alternate;
-        }
         @keyframes floatRocket {
             0% { transform: translateY(0) rotate(0deg); }
             100% { transform: translateY(-12px) rotate(5deg); }
         }
-        @keyframes burnFire {
-            0% { opacity: 0.6; height: 40px; transform: translateX(-50%) scaleX(0.8); }
-            100% { opacity: 1; height: 75px; transform: translateX(-50%) scaleX(1.1); }
+        .fire-trail {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 35px;
+            background: linear-gradient(to bottom, #ff3300, #ff9900, rgba(255, 255, 0, 0));
+            border-radius: 50% 50% 20% 20%;
+            opacity: 0;
+            z-index: 1;
+            filter: blur(2px);
+            pointer-events: none;
+        }
+        .rocket-icon.flying + .fire-trail {
+            opacity: 1;
+            animation: fireBurn 0.2s infinite alternate;
+        }
+        @keyframes fireBurn {
+            0% { transform: translateX(-50%) scale(0.9) translateY(0); opacity: 0.8; }
+            100% { transform: translateX(-50%) scale(1.2) translateY(6px); opacity: 1; }
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            animation: fadeParticle 0.6s linear forwards;
+        }
+        @keyframes fadeParticle {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(40px) scale(0.2); }
         }
         .multiplier {
             font-size: 54px;
             font-weight: 900;
             color: var(--primary);
             text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            z-index: 2;
         }
         .multiplier.crashed {
             color: var(--danger);
@@ -226,6 +239,7 @@
             color: var(--text-secondary);
             font-size: 14px;
             margin-top: 6px;
+            z-index: 2;
         }
         .bets-container {
             width: 100%;
@@ -429,8 +443,8 @@
             <div style="width: 100%; display: flex; margin-bottom: 12px;">
                 <button id="btn-rocket-back" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 14px; font-weight: bold; padding: 0;">&larr; Back to Games</button>
             </div>
-            <div class="rocket-stage">
-                <div class="rocket-container">
+            <div class="rocket-stage" id="rocket-stage">
+                <div class="rocket-wrapper" id="rocket-wrapper">
                     <div id="rocket-img" class="rocket-icon">🚀</div>
                     <div class="fire-trail"></div>
                 </div>
@@ -449,7 +463,7 @@
             </div>
         </div>
 
-        <!-- Empty Navigation Screens -->
+        <!-- Navigation Screens -->
         <div id="screen-backpack" class="screen"></div>
         <div id="screen-invite" class="screen"></div>
         <div id="screen-leaderboard" class="screen"></div>
@@ -516,12 +530,13 @@
         let isBetPlaced = false;
         let isCashedOut = false;
         let currentBet = 0.00;
-        let gamePhase = 'waiting'; // 'waiting', 'flying', 'crashed'
+        let gamePhase = 'waiting';
         let currentMultiplier = 1.00;
         let crashPoint = 1.00;
         let gameLoopTimer = null;
+        let particleTimer = null;
         let countdownTimer = null;
-        let bets = [];
+        let userBetRecord = null;
 
         const user = tg.initDataUnsafe.user;
         if (user) {
@@ -557,15 +572,45 @@
         document.getElementById('close-modal').addEventListener('click', () => depositModal.style.display = 'none');
 
         function topUpWithStars(stars) {
-            alert("Note: Real Telegram Stars payment integration requires a backend server to process invoices.\nSimulating balance top-up...");
             const gramAdded = stars / 100;
             userBalance += gramAdded;
             updateBalance();
             depositModal.style.display = 'none';
+            alert(`Demo Mode: Added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars.\n\nNote: Real Telegram Stars payment requires server-side integration with the Telegram Bot API (createInvoiceLink) to process real payments.`);
         }
 
         function updateBalance() {
             document.getElementById('balance').innerText = userBalance.toFixed(2) + ' GRAM';
+        }
+
+        function spawnParticle() {
+            if (gamePhase !== 'flying') return;
+            const stage = document.getElementById('rocket-stage');
+            const wrapper = document.getElementById('rocket-wrapper');
+            const stageRect = stage.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+
+            const size = Math.floor(Math.random() * 8) + 4;
+            const colors = ['#ff3300', '#ff6600', '#ffcc00', '#ff0055'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            const x = (wrapperRect.left - stageRect.left) + wrapperRect.width / 2 + (Math.random() * 12 - 6);
+            const y = (wrapperRect.top - stageRect.top) + wrapperRect.height - 10;
+
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.backgroundColor = color;
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+
+            stage.appendChild(particle);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 600);
         }
 
         // Rocket Game Logic
@@ -574,6 +619,7 @@
             currentMultiplier = 1.00;
             isBetPlaced = false;
             isCashedOut = false;
+            userBetRecord = null;
             
             document.getElementById('rocket-img').classList.remove('flying');
             document.getElementById('multiplier-text').classList.remove('crashed');
@@ -584,7 +630,6 @@
             btn.classList.remove('cashout');
             btn.disabled = false;
 
-            bets = [];
             renderBets();
 
             let countdown = 5;
@@ -608,13 +653,15 @@
 
             const btn = document.getElementById('btn-place-bet');
             if (isBetPlaced) {
+                btn.disabled = false;
                 btn.innerText = 'Cashout';
                 btn.classList.add('cashout');
-                btn.disabled = false;
             } else {
                 btn.disabled = true;
                 btn.innerText = 'Flight in Progress';
             }
+
+            particleTimer = setInterval(spawnParticle, 50);
 
             gameLoopTimer = setInterval(() => {
                 currentMultiplier += 0.02;
@@ -628,6 +675,7 @@
 
         function endFlightPhase() {
             clearInterval(gameLoopTimer);
+            clearInterval(particleTimer);
             gamePhase = 'crashed';
             document.getElementById('rocket-img').classList.remove('flying');
             document.getElementById('multiplier-text').classList.add('crashed');
@@ -637,11 +685,7 @@
             const btn = document.getElementById('btn-place-bet');
             btn.disabled = true;
             btn.classList.remove('cashout');
-            if (isBetPlaced && !isCashedOut) {
-                btn.innerText = 'Crashed';
-            } else if (!isBetPlaced) {
-                btn.innerText = 'Round Ended';
-            }
+            btn.innerText = 'Round Ended';
 
             setTimeout(() => {
                 startBettingPhase();
@@ -664,8 +708,8 @@
                 isBetPlaced = true;
                 updateBalance();
 
-                const myName = user ? (user.username ? '@' + user.username : (user.first_name || 'You')) : 'You';
-                bets = [{ name: myName + ' (You)', amount: val.toFixed(1), mult: null }];
+                const myName = user ? (user.first_name || 'You') : 'You';
+                userBetRecord = { name: myName + ' (You)', amount: val.toFixed(1), mult: null };
                 renderBets();
 
                 const btn = document.getElementById('btn-place-bet');
@@ -673,14 +717,11 @@
                 btn.disabled = true;
             } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
                 isCashedOut = true;
-                const cashoutMult = currentMultiplier.toFixed(2);
-                const winnings = currentBet * parseFloat(cashoutMult);
+                const winnings = currentBet * currentMultiplier;
                 userBalance += winnings;
                 updateBalance();
 
-                if (bets.length > 0) {
-                    bets[0].mult = cashoutMult;
-                }
+                if (userBetRecord) userBetRecord.mult = currentMultiplier.toFixed(2);
                 renderBets();
 
                 const btn = document.getElementById('btn-place-bet');
@@ -693,18 +734,18 @@
         function renderBets() {
             const container = document.getElementById('bets-list');
             container.innerHTML = '';
-            bets.forEach(b => {
+            if (userBetRecord) {
                 const item = document.createElement('div');
                 item.className = 'bet-item';
                 item.innerHTML = `
-                    <span class="bet-user">${b.name}</span>
+                    <span class="bet-user">${userBetRecord.name}</span>
                     <div>
-                        <span class="bet-value">${b.amount} GRAM</span>
-                        ${b.mult ? `<span class="bet-mult"> @ x${b.mult}</span>` : ''}
+                        <span class="bet-value">${userBetRecord.amount} GRAM</span>
+                        ${userBetRecord.mult ? `<span class="bet-mult"> @ x${userBetRecord.mult}</span>` : ''}
                     </div>
                 `;
                 container.appendChild(item);
-            });
+            }
         }
 
         // Initialize Game
