@@ -311,16 +311,21 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-bottom: 12px;
         }
         .input-group {
             width: 100%;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .input-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
         }
         .input-field {
-            flex: 1;
-            background: var(--bg-card);
+            width: 100%;
+            background: #0f172a;
             border: 1px solid #334155;
             color: white;
             padding: 14px;
@@ -330,7 +335,7 @@
         }
         .auto-cashout-panel {
             width: 100%;
-            background: var(--bg-card);
+            background: #0f172a;
             border: 1px solid #334155;
             border-radius: 14px;
             padding: 12px 16px;
@@ -389,7 +394,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #0f172a;
+            background: var(--bg-card);
             border: 1px solid #334155;
             border-radius: 10px;
             padding: 4px;
@@ -402,7 +407,7 @@
             pointer-events: auto;
         }
         .btn-step {
-            background: #1e293b;
+            background: #0f172a;
             color: white;
             border: 1px solid #334155;
             width: 38px;
@@ -558,8 +563,31 @@
                 <div id="stage-status" class="status-text">Waiting for bets...</div>
             </div>
 
+            <button id="btn-place-bet" class="btn-action">Place Bet</button>
+
+            <div class="bets-container">
+                <div class="bets-title">Live Players' Bets</div>
+                <div id="bets-list" class="bets-list"></div>
+            </div>
+        </div>
+
+        <!-- Navigation Screens -->
+        <div id="screen-backpack" class="screen"></div>
+        <div id="screen-invite" class="screen"></div>
+        <div id="screen-leaderboard" class="screen"></div>
+        <div id="screen-earn" class="screen"></div>
+    </div>
+
+    <!-- Bet Selection Modal Overlay -->
+    <div id="bet-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>Place Bet</span>
+                <span id="close-bet-modal" class="close-btn">&times;</span>
+            </div>
             <div class="controls-container">
                 <div class="input-group">
+                    <div class="input-label">Bet Amount (GRAM)</div>
                     <input type="number" id="bet-amount" class="input-field" placeholder="Bet amount (GRAM)" min="0.1" step="0.1" value="1.0">
                 </div>
 
@@ -579,19 +607,8 @@
                 </div>
             </div>
 
-            <button id="btn-place-bet" class="btn-action">Place Bet</button>
-
-            <div class="bets-container">
-                <div class="bets-title">Live Players' Bets</div>
-                <div id="bets-list" class="bets-list"></div>
-            </div>
+            <button id="btn-confirm-bet" class="btn-action">Confirm Bet</button>
         </div>
-
-        <!-- Navigation Screens -->
-        <div id="screen-backpack" class="screen"></div>
-        <div id="screen-invite" class="screen"></div>
-        <div id="screen-leaderboard" class="screen"></div>
-        <div id="screen-earn" class="screen"></div>
     </div>
 
     <!-- Top Up Modal -->
@@ -683,7 +700,6 @@
             }
         });
 
-        // Sync input value with state
         autoCashoutValInput.addEventListener('input', (e) => {
             let val = parseFloat(e.target.value);
             if (!isNaN(val) && val >= 1.05) {
@@ -722,6 +738,46 @@
         document.getElementById('btn-rocket-back').addEventListener('click', () => {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen-home').classList.add('active');
+        });
+
+        // Bet Modal Logic
+        const betModal = document.getElementById('bet-modal');
+        document.getElementById('close-bet-modal').addEventListener('click', () => betModal.style.display = 'none');
+
+        document.getElementById('btn-place-bet').addEventListener('click', () => {
+            if (gamePhase === 'waiting' && !isBetPlaced) {
+                betModal.style.display = 'flex';
+            } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
+                triggerCashout();
+            }
+        });
+
+        document.getElementById('btn-confirm-bet').addEventListener('click', () => {
+            if (gamePhase === 'waiting' && !isBetPlaced) {
+                const val = parseFloat(document.getElementById('bet-amount').value);
+                if (isNaN(val) || val <= 0) {
+                    alert('Enter valid bet amount');
+                    return;
+                }
+                if (val > userBalance) {
+                    alert('Insufficient funds!');
+                    return;
+                }
+                userBalance -= val;
+                currentBet = val;
+                isBetPlaced = true;
+                updateBalance();
+
+                const myName = user ? (user.first_name || 'You') : 'You';
+                userBetRecord = { name: myName + ' (You)', amount: val.toFixed(1), mult: null };
+                renderBets();
+
+                const btn = document.getElementById('btn-place-bet');
+                btn.innerText = 'Bet Placed (Waiting...)';
+                btn.disabled = true;
+
+                betModal.style.display = 'none';
+            }
         });
 
         // Deposit Modal
@@ -804,6 +860,7 @@
         }
 
         function startFlightPhase() {
+            betModal.style.display = 'none';
             gamePhase = 'flying';
             crashPoint = parseFloat(((Math.random() * 4) + 1.05).toFixed(2));
             document.getElementById('stage-status').innerText = 'Rocket is flying!';
@@ -872,34 +929,6 @@
                 btn.disabled = true;
             }
         }
-
-        document.getElementById('btn-place-bet').addEventListener('click', () => {
-            if (gamePhase === 'waiting' && !isBetPlaced) {
-                const val = parseFloat(document.getElementById('bet-amount').value);
-                if (isNaN(val) || val <= 0) {
-                    alert('Enter valid bet amount');
-                    return;
-                }
-                if (val > userBalance) {
-                    alert('Insufficient funds!');
-                    return;
-                }
-                userBalance -= val;
-                currentBet = val;
-                isBetPlaced = true;
-                updateBalance();
-
-                const myName = user ? (user.first_name || 'You') : 'You';
-                userBetRecord = { name: myName + ' (You)', amount: val.toFixed(1), mult: null };
-                renderBets();
-
-                const btn = document.getElementById('btn-place-bet');
-                btn.innerText = 'Bet Placed (Waiting...)';
-                btn.disabled = true;
-            } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
-                triggerCashout();
-            }
-        });
 
         function renderBets() {
             const container = document.getElementById('bets-list');
