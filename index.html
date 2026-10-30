@@ -15,6 +15,7 @@
             --accent: #22c55e;
             --danger: #ef4444;
             --purple: #a855f7;
+            --fire-orange: #fd7e14;
         }
         * {
             box-sizing: border-box;
@@ -171,18 +172,45 @@
             position: relative;
             margin-bottom: 16px;
         }
+        .rocket-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         .rocket-icon {
             font-size: 64px;
-            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
             transition: transform 0.3s ease;
         }
         .rocket-icon.flying {
             animation: floatRocket 1s ease-in-out infinite alternate;
             filter: drop-shadow(0 0 15px var(--primary));
         }
+        .fire-trail {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 60px;
+            background: linear-gradient(to bottom, var(--fire-orange), #ffc107, transparent);
+            opacity: 0;
+            z-index: 1;
+            border-radius: 0 0 50% 50% / 0 0 20% 20%;
+            filter: blur(4px);
+        }
+        .flying .fire-trail {
+            animation: burnFire 0.4s ease-in-out infinite alternate;
+        }
         @keyframes floatRocket {
             0% { transform: translateY(0) rotate(0deg); }
             100% { transform: translateY(-12px) rotate(5deg); }
+        }
+        @keyframes burnFire {
+            0% { opacity: 0.6; height: 40px; transform: translateX(-50%) scaleX(0.8); }
+            100% { opacity: 1; height: 75px; transform: translateX(-50%) scaleX(1.1); }
         }
         .multiplier {
             font-size: 54px;
@@ -259,6 +287,10 @@
         }
         .btn-action:active {
             transform: scale(0.97);
+        }
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         .input-group {
             width: 100%;
@@ -398,7 +430,10 @@
                 <button id="btn-rocket-back" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 14px; font-weight: bold; padding: 0;">&larr; Back to Games</button>
             </div>
             <div class="rocket-stage">
-                <div id="rocket-img" class="rocket-icon">🚀</div>
+                <div class="rocket-container">
+                    <div id="rocket-img" class="rocket-icon">🚀</div>
+                    <div class="fire-trail"></div>
+                </div>
                 <div id="multiplier-text" class="multiplier">x1.00</div>
                 <div id="stage-status" class="status-text">Waiting for bets...</div>
             </div>
@@ -486,7 +521,7 @@
         let crashPoint = 1.00;
         let gameLoopTimer = null;
         let countdownTimer = null;
-        let userBetRecord = null;
+        let bets = [];
 
         const user = tg.initDataUnsafe.user;
         if (user) {
@@ -522,11 +557,11 @@
         document.getElementById('close-modal').addEventListener('click', () => depositModal.style.display = 'none');
 
         function topUpWithStars(stars) {
+            alert("Note: Real Telegram Stars payment integration requires a backend server to process invoices.\nSimulating balance top-up...");
             const gramAdded = stars / 100;
             userBalance += gramAdded;
             updateBalance();
             depositModal.style.display = 'none';
-            alert(`Demo Mode: Added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars.\n\nNote: Real Telegram Stars payment requires server-side integration with the Telegram Bot API (createInvoiceLink) to process real payments.`);
         }
 
         function updateBalance() {
@@ -539,7 +574,6 @@
             currentMultiplier = 1.00;
             isBetPlaced = false;
             isCashedOut = false;
-            userBetRecord = null;
             
             document.getElementById('rocket-img').classList.remove('flying');
             document.getElementById('multiplier-text').classList.remove('crashed');
@@ -550,6 +584,7 @@
             btn.classList.remove('cashout');
             btn.disabled = false;
 
+            bets = [];
             renderBets();
 
             let countdown = 5;
@@ -573,9 +608,9 @@
 
             const btn = document.getElementById('btn-place-bet');
             if (isBetPlaced) {
-                btn.disabled = false;
                 btn.innerText = 'Cashout';
                 btn.classList.add('cashout');
+                btn.disabled = false;
             } else {
                 btn.disabled = true;
                 btn.innerText = 'Flight in Progress';
@@ -602,7 +637,11 @@
             const btn = document.getElementById('btn-place-bet');
             btn.disabled = true;
             btn.classList.remove('cashout');
-            btn.innerText = 'Round Ended';
+            if (isBetPlaced && !isCashedOut) {
+                btn.innerText = 'Crashed';
+            } else if (!isBetPlaced) {
+                btn.innerText = 'Round Ended';
+            }
 
             setTimeout(() => {
                 startBettingPhase();
@@ -625,8 +664,8 @@
                 isBetPlaced = true;
                 updateBalance();
 
-                const myName = user ? (user.first_name || 'You') : 'You';
-                userBetRecord = { name: myName + ' (You)', amount: val.toFixed(1), mult: null };
+                const myName = user ? (user.username ? '@' + user.username : (user.first_name || 'You')) : 'You';
+                bets = [{ name: myName + ' (You)', amount: val.toFixed(1), mult: null }];
                 renderBets();
 
                 const btn = document.getElementById('btn-place-bet');
@@ -634,11 +673,14 @@
                 btn.disabled = true;
             } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
                 isCashedOut = true;
-                const winnings = currentBet * currentMultiplier;
+                const cashoutMult = currentMultiplier.toFixed(2);
+                const winnings = currentBet * parseFloat(cashoutMult);
                 userBalance += winnings;
                 updateBalance();
 
-                if (userBetRecord) userBetRecord.mult = currentMultiplier.toFixed(2);
+                if (bets.length > 0) {
+                    bets[0].mult = cashoutMult;
+                }
                 renderBets();
 
                 const btn = document.getElementById('btn-place-bet');
@@ -651,18 +693,18 @@
         function renderBets() {
             const container = document.getElementById('bets-list');
             container.innerHTML = '';
-            if (userBetRecord) {
+            bets.forEach(b => {
                 const item = document.createElement('div');
                 item.className = 'bet-item';
                 item.innerHTML = `
-                    <span class="bet-user">${userBetRecord.name}</span>
+                    <span class="bet-user">${b.name}</span>
                     <div>
-                        <span class="bet-value">${userBetRecord.amount} GRAM</span>
-                        ${userBetRecord.mult ? `<span class="bet-mult"> @ x${userBetRecord.mult}</span>` : ''}
+                        <span class="bet-value">${b.amount} GRAM</span>
+                        ${b.mult ? `<span class="bet-mult"> @ x${b.mult}</span>` : ''}
                     </div>
                 `;
                 container.appendChild(item);
-            }
+            });
         }
 
         // Initialize Game
