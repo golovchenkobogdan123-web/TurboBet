@@ -52,6 +52,11 @@
         .username {
             font-weight: bold;
         }
+        .balance-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
         .balance-container {
             text-align: right;
         }
@@ -63,6 +68,21 @@
             font-size: 18px;
             font-weight: bold;
             color: var(--primary);
+        }
+        .btn-deposit {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .btn-deposit:active {
+            transform: scale(0.96);
         }
         .content {
             flex: 1;
@@ -242,9 +262,12 @@
             <div id="user-avatar" class="avatar">?</div>
             <div id="user-username" class="username">Loading...</div>
         </div>
-        <div class="balance-container">
-            <div class="balance-title">Your balance:</div>
-            <div id="balance" class="balance-value">0.00</div>
+        <div class="balance-section">
+            <button id="btn-deposit" class="btn-deposit">Deposit</button>
+            <div class="balance-container">
+                <div class="balance-title">Your balance:</div>
+                <div id="balance" class="balance-value">0.00</div>
+            </div>
         </div>
     </div>
     <div class="content" id="main-content">
@@ -331,6 +354,14 @@
         const multiplierDisplay = document.getElementById('rocket-multiplier');
         const balanceDisplay = document.getElementById('balance');
         const rocketImg = document.getElementById('rocket-img');
+        const btnDeposit = document.getElementById('btn-deposit');
+
+        btnDeposit.addEventListener('click', () => {
+            let currentBalance = parseFloat(balanceDisplay.innerText);
+            currentBalance += 100.00;
+            balanceDisplay.innerText = currentBalance.toFixed(2);
+            alert('Added 100.00 to your balance!');
+        });
 
         let isPlaying = false;
         let multiplier = 1.00;
