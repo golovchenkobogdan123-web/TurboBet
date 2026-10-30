@@ -11,7 +11,7 @@
     <div class="app-container">
         <div id="profile-section">
             <div class="user-info">
-                <div id="user-avatar" class="avatar"></div>
+                <div id="user-avatar" class="avatar">?</div>
                 <div id="user-username" class="username">Завантаження...</div>
             </div>
             <div class="balance-container">
@@ -28,8 +28,20 @@
         const user = tg.initDataUnsafe.user;
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
+            
+            // Отримуємо ініціали для аватарки
+            let initials = '';
             if (user.first_name) {
-                document.getElementById('user-avatar').innerText = user.first_name.charAt(0);
+                initials += user.first_name.charAt(0);
+            }
+            if (user.last_name) {
+                initials += user.last_name.charAt(0);
+            }
+            
+            if (initials) {
+                document.getElementById('user-avatar').innerText = initials.toUpperCase();
+            } else {
+                document.getElementById('user-avatar').innerText = '?';
             }
         }
     </script>
