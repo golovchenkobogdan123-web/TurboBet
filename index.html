@@ -12,6 +12,7 @@
             --primary: #38bdf8;
             --text: #f1f5f9;
             --text-secondary: #94a3b8;
+            --accent: #22c55e;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -67,31 +68,94 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
         }
+        .games-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .game-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border: 1px solid #334155;
+            transition: transform 0.1s;
+        }
+        .game-card:active {
+            transform: scale(0.98);
+        }
+        .game-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .game-icon {
+            width: 60px;
+            height: 60px;
+            background: #334155;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+        }
+        .game-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .game-badge {
+            background: #ef4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .rocket-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
         .multiplier {
-            font-size: 64px;
+            font-size: 72px;
             font-weight: bold;
             color: var(--primary);
-            margin-bottom: 30px;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
         }
-        .btn-cashout {
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
-            color: #0f172a;
-            padding: 18px 40px;
-            font-size: 20px;
+        .btn-action {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 20px 40px;
+            font-size: 22px;
             font-weight: bold;
             border: none;
             border-radius: 16px;
             cursor: pointer;
             width: 100%;
             max-width: 300px;
-            box-shadow: 0 10px 20px rgba(2, 132, 199, 0.3);
-            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 10px 20px rgba(29, 78, 216, 0.3);
+            transition: transform 0.1s;
         }
-        .btn-cashout:active {
+        .btn-bet {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        .btn-cashout {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            box-shadow: 0 10px 20px rgba(185, 28, 28, 0.3);
+            display: none;
+        }
+        .btn-action:active {
             transform: scale(0.98);
         }
         .nav-bar {
@@ -118,6 +182,10 @@
             height: 24px;
             fill: currentColor;
         }
+        .crashed {
+            color: #ef4444 !important;
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -131,9 +199,27 @@
             <div id="balance" class="balance-value">0.00</div>
         </div>
     </div>
-    <div class="content">
-        <div id="multiplier" class="multiplier">x1.00</div>
-        <button id="cashout-btn" class="btn-cashout">Cashout</button>
+    <div class="content" id="main-content">
+        <!-- Dashboard Screen -->
+        <div id="dashboard-screen" class="games-grid">
+            <div class="game-card" id="rocket-game-card">
+                <div class="game-info">
+                    <div class="game-icon">🚀</div>
+                    <div>
+                        <div class="game-name">Rocket</div>
+                        <div style="color: var(--text-secondary); font-size: 14px;">Try to catch the highest multiplier</div>
+                    </div>
+                </div>
+                <div class="game-badge">HOT</div>
+            </div>
+        </div>
+
+        <!-- Rocket Game Screen -->
+        <div id="rocket-screen" class="rocket-screen" style="display: none;">
+            <div id="rocket-multiplier" class="multiplier">x1.00</div>
+            <button id="btn-bet" class="btn-action btn-bet">Place Bet</button>
+            <button id="btn-cashout" class="btn-action btn-cashout">Cashout</button>
+        </div>
     </div>
     <div class="nav-bar">
         <div class="nav-item">
@@ -160,6 +246,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
         const user = tg.initDataUnsafe.user;
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
@@ -168,6 +255,84 @@
             else if (user.username) initials = user.username.charAt(0).toUpperCase();
             document.getElementById('user-avatar').innerText = initials;
         }
+
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const rocketScreen = document.getElementById('rocket-screen');
+        const rocketGameCard = document.getElementById('rocket-game-card');
+        const homeNav = document.querySelector('.nav-item.active');
+
+        rocketGameCard.addEventListener('click', () => {
+            dashboardScreen.style.display = 'none';
+            rocketScreen.style.display = 'flex';
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.nav-item')[2].classList.add('active'); 
+        });
+
+        const btnBet = document.getElementById('btn-bet');
+        const btnCashout = document.getElementById('btn-cashout');
+        const multiplierDisplay = document.getElementById('rocket-multiplier');
+        const balanceDisplay = document.getElementById('balance');
+
+        let isPlaying = false;
+        let multiplier = 1.00;
+        let crashPoint = 1.00;
+        let gameInterval = null;
+        let betAmount = 10.00; 
+
+        function generateCrashPoint() {
+            const e = 2.71828;
+            const r = Math.random();
+            return Math.floor((e - r) / r * 100) / 100;
+        }
+
+        btnBet.addEventListener('click', () => {
+            let currentBalance = parseFloat(balanceDisplay.innerText);
+            if (currentBalance < betAmount) {
+                alert('Insufficient funds!');
+                return;
+            }
+
+            currentBalance -= betAmount;
+            balanceDisplay.innerText = currentBalance.toFixed(2);
+
+            isPlaying = true;
+            multiplier = 1.00;
+            crashPoint = generateCrashPoint();
+            multiplierDisplay.innerText = 'x1.00';
+            multiplierDisplay.classList.remove('crashed');
+            btnBet.style.display = 'none';
+            btnCashout.style.display = 'block';
+
+            gameInterval = setInterval(() => {
+                multiplier += 0.01;
+                multiplierDisplay.innerText = 'x' + multiplier.toFixed(2);
+
+                if (multiplier >= crashPoint) {
+                    clearInterval(gameInterval);
+                    isPlaying = false;
+                    multiplierDisplay.innerText = 'CRASHED';
+                    multiplierDisplay.classList.add('crashed');
+                    btnBet.style.display = 'block';
+                    btnCashout.style.display = 'none';
+                }
+            }, 50);
+        });
+
+        btnCashout.addEventListener('click', () => {
+            if (!isPlaying) return;
+
+            clearInterval(gameInterval);
+            isPlaying = false;
+
+            let currentBalance = parseFloat(balanceDisplay.innerText);
+            let winnings = betAmount * multiplier;
+            currentBalance += winnings;
+            balanceDisplay.innerText = currentBalance.toFixed(2);
+
+            alert('You cashed out at x' + multiplier.toFixed(2) + '! Won: ' + winnings.toFixed(2));
+            btnBet.style.display = 'block';
+            btnCashout.style.display = 'none';
+        });
     </script>
 </body>
 </html>
