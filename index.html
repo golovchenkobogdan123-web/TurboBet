@@ -13,6 +13,7 @@
             --text: #f1f5f9;
             --text-secondary: #94a3b8;
             --accent: #22c55e;
+            --danger: #ef4444;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -125,38 +126,63 @@
             justify-content: center;
             height: 100%;
             width: 100%;
+            gap: 30px;
+        }
+        .rocket-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .rocket-icon {
+            font-size: 80px;
+            display: none;
+            animation: float 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px var(--primary));
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
         .multiplier {
-            font-size: 72px;
-            font-weight: bold;
+            font-size: 80px;
+            font-weight: 900;
             color: var(--primary);
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            text-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s;
+        }
+        .multiplier.growing {
+            transform: scale(1.05);
         }
         .btn-action {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
-            padding: 20px 40px;
+            padding: 20px 0;
             font-size: 22px;
             font-weight: bold;
             border: none;
             border-radius: 16px;
             cursor: pointer;
             width: 100%;
-            max-width: 300px;
-            box-shadow: 0 10px 20px rgba(29, 78, 216, 0.3);
-            transition: transform 0.1s;
+            max-width: 320px;
+            box-shadow: 0 15px 25px rgba(29, 78, 216, 0.4);
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .btn-bet {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            box-shadow: 0 15px 25px rgba(2, 132, 199, 0.4);
         }
         .btn-cashout {
             background: linear-gradient(135deg, #ef4444, #b91c1c);
-            box-shadow: 0 10px 20px rgba(185, 28, 28, 0.3);
+            box-shadow: 0 15px 25px rgba(185, 28, 28, 0.4);
             display: none;
         }
         .btn-action:active {
-            transform: scale(0.98);
+            transform: scale(0.96);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         .nav-bar {
             background: var(--bg-card);
@@ -173,6 +199,7 @@
             font-size: 12px;
             gap: 4px;
             cursor: pointer;
+            transition: color 0.2s;
         }
         .nav-item.active {
             color: var(--primary);
@@ -183,8 +210,8 @@
             fill: currentColor;
         }
         .crashed {
-            color: #ef4444 !important;
-            text-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+            color: var(--danger) !important;
+            text-shadow: 0 0 30px rgba(239, 68, 68, 0.6) !important;
         }
     </style>
 </head>
@@ -216,7 +243,10 @@
 
         <!-- Rocket Game Screen -->
         <div id="rocket-screen" class="rocket-screen" style="display: none;">
-            <div id="rocket-multiplier" class="multiplier">x1.00</div>
+            <div class="rocket-container">
+                <div id="rocket-img" class="rocket-icon">🚀</div>
+                <div id="rocket-multiplier" class="multiplier">x1.00</div>
+            </div>
             <button id="btn-bet" class="btn-action btn-bet">Place Bet</button>
             <button id="btn-cashout" class="btn-action btn-cashout">Cashout</button>
         </div>
@@ -259,19 +289,17 @@
         const dashboardScreen = document.getElementById('dashboard-screen');
         const rocketScreen = document.getElementById('rocket-screen');
         const rocketGameCard = document.getElementById('rocket-game-card');
-        const homeNav = document.querySelector('.nav-item.active');
 
         rocketGameCard.addEventListener('click', () => {
             dashboardScreen.style.display = 'none';
             rocketScreen.style.display = 'flex';
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.querySelectorAll('.nav-item')[2].classList.add('active'); 
         });
 
         const btnBet = document.getElementById('btn-bet');
         const btnCashout = document.getElementById('btn-cashout');
         const multiplierDisplay = document.getElementById('rocket-multiplier');
         const balanceDisplay = document.getElementById('balance');
+        const rocketImg = document.getElementById('rocket-img');
 
         let isPlaying = false;
         let multiplier = 1.00;
@@ -300,18 +328,24 @@
             crashPoint = generateCrashPoint();
             multiplierDisplay.innerText = 'x1.00';
             multiplierDisplay.classList.remove('crashed');
+            multiplierDisplay.classList.add('growing');
+            rocketImg.style.display = 'block';
             btnBet.style.display = 'none';
             btnCashout.style.display = 'block';
 
             gameInterval = setInterval(() => {
                 multiplier += 0.01;
                 multiplierDisplay.innerText = 'x' + multiplier.toFixed(2);
+                
+                multiplierDisplay.classList.toggle('growing');
 
                 if (multiplier >= crashPoint) {
                     clearInterval(gameInterval);
                     isPlaying = false;
                     multiplierDisplay.innerText = 'CRASHED';
                     multiplierDisplay.classList.add('crashed');
+                    multiplierDisplay.classList.remove('growing');
+                    rocketImg.style.display = 'none';
                     btnBet.style.display = 'block';
                     btnCashout.style.display = 'none';
                 }
@@ -330,6 +364,7 @@
             balanceDisplay.innerText = currentBalance.toFixed(2);
 
             alert('You cashed out at x' + multiplier.toFixed(2) + '! Won: ' + winnings.toFixed(2));
+            rocketImg.style.display = 'none';
             btnBet.style.display = 'block';
             btnCashout.style.display = 'none';
         });
