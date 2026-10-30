@@ -632,7 +632,7 @@
             Home
         </div>
         <div class="nav-item" data-screen="leaderboard">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm6 12H6c0-2 4-3.1 6-3.1s6 1.1 6 3.1z"/></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16h1.1 0 2.9 2.9 8.2l3 3z"/></svg>
             Leaderboard
         </div>
         <div class="nav-item" data-screen="earn">
@@ -794,119 +794,7 @@
             gamePhase = 'flying';
             crashPoint = parseFloat(((Math.random() * 4) + 1.05).toFixed(2));
             document.getElementById('stage-status').innerText = 'Rocket is flying!';
-            document.getElementById('rocket-img').classList.add('flying');
-
-            const btn = document.getElementById('btn-place-bet');
-            if (isBetPlaced) {
-                btn.disabled = false;
-                btn.innerText = 'Cashout';
-                btn.classList.add('cashout');
-            } else {
-                btn.disabled = true;
-                btn.innerText = 'Flight in Progress';
-            }
-
-            particleTimer = setInterval(spawnParticle, 50);
-
-            gameLoopTimer = setInterval(() => {
-                currentMultiplier += 0.02;
-                document.getElementById('multiplier-text').innerText = 'x' + currentMultiplier.toFixed(2);
-
-                if (isBetPlaced && !isCashedOut && autoCashoutToggle.checked) {
-                    if (currentMultiplier >= autoCashoutValue) {
-                        triggerCashout();
-                    }
-                }
-
-                if (currentMultiplier >= crashPoint) {
-                    endFlightPhase();
-                }
-            }, 100);
-        }
-
-        function endFlightPhase() {
-            clearInterval(gameLoopTimer);
-            clearInterval(particleTimer);
-            gamePhase = 'crashed';
-            document.getElementById('rocket-img').classList.remove('flying');
-            document.getElementById('multiplier-text').classList.add('crashed');
-            document.getElementById('multiplier-text').innerText = 'CRASHED';
-            document.getElementById('stage-status').innerText = `Crashed at x${crashPoint.toFixed(2)}`;
-
-            const btn = document.getElementById('btn-place-bet');
-            btn.disabled = true;
-            btn.classList.remove('cashout');
-            btn.innerText = 'Round Ended';
-
-            setTimeout(() => {
-                startBettingPhase();
-            }, 3000);
-        }
-
-        function triggerCashout() {
-            if (isBetPlaced && !isCashedOut) {
-                isCashedOut = true;
-                const winnings = currentBet * currentMultiplier;
-                userBalance += winnings;
-                updateBalance();
-
-                if (userBetRecord) userBetRecord.mult = currentMultiplier.toFixed(2);
-                renderBets();
-
-                const btn = document.getElementById('btn-place-bet');
-                btn.innerText = `Cashed Out (+${winnings.toFixed(2)})`;
-                btn.classList.remove('cashout');
-                btn.disabled = true;
-            }
-        }
-
-        document.getElementById('btn-place-bet').addEventListener('click', () => {
-            if (gamePhase === 'waiting' && !isBetPlaced) {
-                const val = parseFloat(document.getElementById('bet-amount').value);
-                if (isNaN(val) || val <= 0) {
-                    alert('Enter valid bet amount');
-                    return;
-                }
-                if (val > userBalance) {
-                    alert('Insufficient funds!');
-                    return;
-                }
-                userBalance -= val;
-                currentBet = val;
-                isBetPlaced = true;
-                updateBalance();
-
-                const myName = user ? (user.first_name || 'You') : 'You';
-                userBetRecord = { name: myName + ' (You)', amount: val.toFixed(1), mult: null };
-                renderBets();
-
-                const btn = document.getElementById('btn-place-bet');
-                btn.innerText = 'Bet Placed (Waiting...)';
-                btn.disabled = true;
-            } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
-                triggerCashout();
-            }
-        });
-
-        function renderBets() {
-            const container = document.getElementById('bets-list');
-            container.innerHTML = '';
-            if (userBetRecord) {
-                const item = document.createElement('div');
-                item.className = 'bet-item';
-                item.innerHTML = `
-                    <span class="bet-user">${userBetRecord.name}</span>
-                    <div>
-                        <span class="bet-value">${userBetRecord.amount} GRAM</span>
-                        ${userBetRecord.mult ? `<span class="bet-mult"> @ x${userBetRecord.mult}</span>` : ''}
-                    </div>
-                `;
-                container.appendChild(item);
-            }
-        }
-
-        // Initialize Game
-        startBettingPhase();
+            document.getElementById('rocket-icon').classList.add('flying');
     </script>
 </body>
 </html>
