@@ -14,6 +14,11 @@
             --text-secondary: #94a3b8;
             --accent: #22c55e;
             --danger: #ef4444;
+            --purple: #a855f7;
+        }
+        * {
+            box-sizing: border-box;
+            user-select: none;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -23,6 +28,7 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            overflow-x: hidden;
         }
         .header {
             background: var(--bg-card);
@@ -31,6 +37,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #334155;
+            z-index: 10;
         }
         .user-info {
             display: flex;
@@ -62,10 +69,10 @@
         }
         .balance-title {
             color: var(--text-secondary);
-            font-size: 12px;
+            font-size: 11px;
         }
         .balance-value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: var(--primary);
         }
@@ -73,31 +80,41 @@
             background: linear-gradient(135deg, #10b981, #059669);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 12px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            transition: transform 0.1s, box-shadow 0.2s;
+            transition: transform 0.1s;
         }
         .btn-deposit:active {
             transform: scale(0.96);
         }
         .content {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             position: relative;
+            overflow-y: auto;
+        }
+        .screen {
+            width: 100%;
+            max-width: 500px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .screen.active {
+            display: flex;
         }
         .games-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 16px;
             width: 100%;
-            max-width: 500px;
         }
         .game-card {
             background: var(--bg-card);
@@ -119,140 +136,227 @@
             gap: 15px;
         }
         .game-icon {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background: #334155;
             border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 30px;
+            font-size: 26px;
         }
         .game-name {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
         }
         .game-badge {
-            background: #ef4444;
+            background: var(--danger);
             color: white;
             padding: 4px 8px;
             border-radius: 8px;
             font-size: 12px;
             font-weight: bold;
         }
-        .rocket-screen {
+        .rocket-stage {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            width: 100%;
-            gap: 30px;
-        }
-        .btn-back {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: var(--bg-card);
-            color: var(--text-secondary);
+            min-height: 220px;
             border: 1px solid #334155;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: color 0.2s, background-color 0.2s;
-        }
-        .btn-back:hover {
-            color: var(--text);
-            background-color: #334155;
-        }
-        .rocket-container {
             position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            margin-bottom: 16px;
         }
         .rocket-icon {
-            font-size: 80px;
-            display: none;
-            animation: float 2s ease-in-out infinite;
+            font-size: 64px;
+            margin-bottom: 12px;
+            transition: transform 0.3s ease;
+        }
+        .rocket-icon.flying {
+            animation: floatRocket 1s ease-in-out infinite alternate;
             filter: drop-shadow(0 0 15px var(--primary));
         }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        @keyframes floatRocket {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-12px) rotate(5deg); }
         }
         .multiplier {
-            font-size: 80px;
+            font-size: 54px;
             font-weight: 900;
             color: var(--primary);
-            text-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
-            transition: transform 0.1s;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
         }
-        .multiplier.growing {
-            transform: scale(1.05);
+        .multiplier.crashed {
+            color: var(--danger);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .status-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+        .bets-container {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid #334155;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .bets-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .bets-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .bet-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+        }
+        .bet-user {
+            font-weight: 600;
+        }
+        .bet-value {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .bet-mult {
+            color: var(--accent);
+            font-weight: bold;
         }
         .btn-action {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #0284c7, #0369a1);
             color: white;
-            padding: 20px 0;
-            font-size: 22px;
+            padding: 16px;
+            font-size: 18px;
             font-weight: bold;
             border: none;
-            border-radius: 16px;
+            border-radius: 14px;
             cursor: pointer;
             width: 100%;
-            max-width: 320px;
-            box-shadow: 0 15px 25px rgba(29, 78, 216, 0.4);
-            transition: transform 0.1s, box-shadow 0.2s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            box-shadow: 0 10px 20px rgba(2, 132, 199, 0.3);
+            transition: transform 0.1s;
         }
-        .btn-bet {
-            background: linear-gradient(135deg, #0284c7, #0369a1);
-            box-shadow: 0 15px 25px rgba(2, 132, 199, 0.4);
-        }
-        .btn-cashout {
+        .btn-action.cashout {
             background: linear-gradient(135deg, #ef4444, #b91c1c);
-            box-shadow: 0 15px 25px rgba(185, 28, 28, 0.4);
-            display: none;
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
         }
         .btn-action:active {
-            transform: scale(0.96);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: scale(0.97);
+        }
+        .input-group {
+            width: 100%;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .input-field {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid #334155;
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid #334155;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close-btn {
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 20px;
+        }
+        .stars-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .star-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .star-card:hover {
+            border-color: var(--purple);
         }
         .nav-bar {
             background: var(--bg-card);
-            padding: 10px;
+            padding: 12px 0;
             display: flex;
             justify-content: space-around;
             border-top: 1px solid #334155;
+            z-index: 10;
         }
         .nav-item {
             color: var(--text-secondary);
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 12px;
+            font-size: 11px;
             gap: 4px;
             cursor: pointer;
-            transition: color 0.2s;
+            flex: 1;
         }
         .nav-item.active {
             color: var(--primary);
         }
         .nav-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             fill: currentColor;
-        }
-        .crashed {
-            color: var(--danger) !important;
-            text-shadow: 0 0 30px rgba(239, 68, 68, 0.6) !important;
         }
     </style>
 </head>
@@ -265,171 +369,321 @@
         <div class="balance-section">
             <button id="btn-deposit" class="btn-deposit">Deposit</button>
             <div class="balance-container">
-                <div class="balance-title">Your balance:</div>
-                <div id="balance" class="balance-value">0.00</div>
+                <div class="balance-title">Balance:</div>
+                <div id="balance" class="balance-value">0.00 GRAM</div>
             </div>
         </div>
     </div>
-    <div class="content" id="main-content">
-        <!-- Dashboard Screen -->
-        <div id="dashboard-screen" class="games-grid">
-            <div class="game-card" id="rocket-game-card">
-                <div class="game-info">
-                    <div class="game-icon">🚀</div>
-                    <div>
-                        <div class="game-name">Rocket</div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">Try to catch the highest multiplier</div>
+
+    <div class="content">
+        <!-- Home Screen -->
+        <div id="screen-home" class="screen active">
+            <div class="games-grid">
+                <div class="game-card" id="btn-open-rocket">
+                    <div class="game-info">
+                        <div class="game-icon">🚀</div>
+                        <div>
+                            <div class="game-name">Rocket</div>
+                            <div style="color: var(--text-secondary); font-size: 13px;">Catch highest multiplier</div>
+                        </div>
                     </div>
+                    <div class="game-badge">HOT</div>
                 </div>
-                <div class="game-badge">HOT</div>
             </div>
         </div>
 
         <!-- Rocket Game Screen -->
-        <div id="rocket-screen" class="rocket-screen" style="display: none;">
-            <button id="btn-back" class="btn-back">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                Back
-            </button>
-            <div class="rocket-container">
-                <div id="rocket-img" class="rocket-icon">🚀</div>
-                <div id="rocket-multiplier" class="multiplier">x1.00</div>
+        <div id="screen-rocket" class="screen">
+            <div style="width: 100%; display: flex; margin-bottom: 12px;">
+                <button id="btn-rocket-back" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 14px; font-weight: bold; padding: 0;">&larr; Back to Games</button>
             </div>
-            <button id="btn-bet" class="btn-action btn-bet">Place Bet</button>
-            <button id="btn-cashout" class="btn-action btn-cashout">Cashout</button>
+            <div class="rocket-stage">
+                <div id="rocket-img" class="rocket-icon">🚀</div>
+                <div id="multiplier-text" class="multiplier">x1.00</div>
+                <div id="stage-status" class="status-text">Waiting for bets...</div>
+            </div>
+
+            <div class="input-group">
+                <input type="number" id="bet-amount" class="input-field" placeholder="Bet amount (GRAM)" min="0.1" step="0.1" value="1.0">
+            </div>
+            <button id="btn-place-bet" class="btn-action">Place Bet</button>
+
+            <div class="bets-container">
+                <div class="bets-title">Live Players' Bets</div>
+                <div id="bets-list" class="bets-list"></div>
+            </div>
+        </div>
+
+        <!-- Empty Navigation Screens -->
+        <div id="screen-backpack" class="screen"></div>
+        <div id="screen-invite" class="screen"></div>
+        <div id="screen-leaderboard" class="screen"></div>
+        <div id="screen-earn" class="screen"></div>
+    </div>
+
+    <!-- Top Up Modal -->
+    <div id="deposit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>Top Up Balance</span>
+                <span id="close-modal" class="close-btn">&times;</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-secondary);">Pay with Telegram Stars (100 Stars = 1.00 GRAM)</div>
+            <div class="stars-options">
+                <div class="star-card" onclick="topUpWithStars(100)">
+                    <span style="font-size: 20px;">⭐ 100</span>
+                    <span style="font-size: 12px; color: var(--primary);">+1.00 GRAM</span>
+                </div>
+                <div class="star-card" onclick="topUpWithStars(500)">
+                    <span style="font-size: 20px;">⭐ 500</span>
+                    <span style="font-size: 12px; color: var(--primary);">+5.00 GRAM</span>
+                </div>
+                <div class="star-card" onclick="topUpWithStars(1000)">
+                    <span style="font-size: 20px;">⭐ 1000</span>
+                    <span style="font-size: 12px; color: var(--primary);">+10.00 GRAM</span>
+                </div>
+                <div class="star-card" onclick="topUpWithStars(5000)">
+                    <span style="font-size: 20px;">⭐ 5000</span>
+                    <span style="font-size: 12px; color: var(--primary);">+50.00 GRAM</span>
+                </div>
+            </div>
         </div>
     </div>
+
     <div class="nav-bar">
-        <div class="nav-item">
+        <div class="nav-item" data-screen="backpack">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 0h-4V4h4v2z"/></svg>
             Backpack
         </div>
-        <div class="nav-item">
+        <div class="nav-item" data-screen="invite">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3z"/></svg>
             Invite
         </div>
-        <div class="nav-item active">
+        <div class="nav-item active" data-screen="home">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             Home
         </div>
-        <div class="nav-item">
+        <div class="nav-item" data-screen="leaderboard">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm6 12H6c0-2 4-3.1 6-3.1s6 1.1 6 3.1z"/></svg>
             Leaderboard
         </div>
-        <div class="nav-item">
+        <div class="nav-item" data-screen="earn">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.28 1.45-2.05 3.7-2.05s3.78.78 3.78 2.05h1.27c0-2-1.92-3.05-5.05-3.05V3h-2v2.85c-2.92.35-4.8.85-4.8 2.85 0 2.15 2.1 3.15 5.06 3.9 2.17.55 3 1.25 3 2.25 0 1.5-1.55 2.25-3.8 2.25-2.73 0-3.9-1.07-3.9-2.35H5.8c0 2.5 1.78 3.5 5.03 3.9V21h2v-2.92c3-.38 5-1.25 5-3.9 0-2.45-1.9-3.45-4.03-3.98z"/></svg>
             Earn
         </div>
     </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        let userBalance = 0.00;
+        let isBetPlaced = false;
+        let isCashedOut = false;
+        let currentBet = 0.00;
+        let gamePhase = 'waiting'; // 'waiting', 'flying', 'crashed'
+        let currentMultiplier = 1.00;
+        let crashPoint = 1.00;
+        let gameLoopTimer = null;
+        let countdownTimer = null;
+        let bets = [];
+
+        const mockPlayers = ['Alex', 'Dmitry', 'Satoshi', 'CryptoKing', 'Luna', 'VipPlayer', 'TraderX'];
+
         const user = tg.initDataUnsafe.user;
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
-            let initials = '?';
-            if (user.first_name) initials = user.first_name.charAt(0).toUpperCase();
-            else if (user.username) initials = user.username.charAt(0).toUpperCase();
+            let initials = user.first_name ? user.first_name.charAt(0).toUpperCase() : '?';
             document.getElementById('user-avatar').innerText = initials;
         }
 
-        const dashboardScreen = document.getElementById('dashboard-screen');
-        const rocketScreen = document.getElementById('rocket-screen');
-        const rocketGameCard = document.getElementById('rocket-game-card');
-        const btnBack = document.getElementById('btn-back');
-
-        rocketGameCard.addEventListener('click', () => {
-            dashboardScreen.style.display = 'none';
-            rocketScreen.style.display = 'flex';
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                item.classList.add('active');
+                const screenId = 'screen-' + item.getAttribute('data-screen');
+                document.getElementById(screenId).classList.add('active');
+            });
         });
 
-        btnBack.addEventListener('click', () => {
-            rocketScreen.style.display = 'none';
-            dashboardScreen.style.display = 'grid';
+        document.getElementById('btn-open-rocket').addEventListener('click', () => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-rocket').classList.add('active');
         });
 
-        const btnBet = document.getElementById('btn-bet');
-        const btnCashout = document.getElementById('btn-cashout');
-        const multiplierDisplay = document.getElementById('rocket-multiplier');
-        const balanceDisplay = document.getElementById('balance');
-        const rocketImg = document.getElementById('rocket-img');
-        const btnDeposit = document.getElementById('btn-deposit');
-
-        btnDeposit.addEventListener('click', () => {
-            let currentBalance = parseFloat(balanceDisplay.innerText);
-            currentBalance += 100.00;
-            balanceDisplay.innerText = currentBalance.toFixed(2);
-            alert('Added 100.00 to your balance!');
+        document.getElementById('btn-rocket-back').addEventListener('click', () => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-home').classList.add('active');
         });
 
-        let isPlaying = false;
-        let multiplier = 1.00;
-        let crashPoint = 1.00;
-        let gameInterval = null;
-        let betAmount = 10.00; 
+        // Deposit Modal
+        const depositModal = document.getElementById('deposit-modal');
+        document.getElementById('btn-deposit').addEventListener('click', () => depositModal.style.display = 'flex');
+        document.getElementById('close-modal').addEventListener('click', () => depositModal.style.display = 'none');
 
-        function generateCrashPoint() {
-            const e = 2.71828;
-            const r = Math.random();
-            return Math.floor((e - r) / r * 100) / 100;
+        function topUpWithStars(stars) {
+            const gramAdded = stars / 100;
+            userBalance += gramAdded;
+            updateBalance();
+            depositModal.style.display = 'none';
+            alert(`Succesfully added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars!`);
         }
 
-        btnBet.addEventListener('click', () => {
-            let currentBalance = parseFloat(balanceDisplay.innerText);
-            if (currentBalance < betAmount) {
-                alert('Insufficient funds!');
-                return;
+        function updateBalance() {
+            document.getElementById('balance').innerText = userBalance.toFixed(2) + ' GRAM';
+        }
+
+        // Rocket Game Logic
+        function startBettingPhase() {
+            gamePhase = 'waiting';
+            currentMultiplier = 1.00;
+            isBetPlaced = false;
+            isCashedOut = false;
+            
+            document.getElementById('rocket-img').classList.remove('flying');
+            document.getElementById('multiplier-text').classList.remove('crashed');
+            document.getElementById('multiplier-text').innerText = 'x1.00';
+            
+            const btn = document.getElementById('btn-place-bet');
+            btn.innerText = 'Place Bet';
+            btn.classList.remove('cashout');
+            btn.disabled = false;
+
+            // Generate initial mock bets
+            bets = [];
+            const mockCount = Math.floor(Math.random() * 4) + 2;
+            for (let i = 0; i < mockCount; i++) {
+                const name = mockPlayers[Math.floor(Math.random() * mockPlayers.length)];
+                const amt = (Math.random() * 5 + 0.5).toFixed(1);
+                bets.push({ name: name, amount: amt, mult: null });
+            }
+            renderBets();
+
+            let countdown = 5;
+            document.getElementById('stage-status').innerText = `Next round starts in ${countdown}s`;
+            countdownTimer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    document.getElementById('stage-status').innerText = `Next round starts in ${countdown}s`;
+                } else {
+                    clearInterval(countdownTimer);
+                    startFlightPhase();
+                }
+            }, 1000);
+        }
+
+        function startFlightPhase() {
+            gamePhase = 'flying';
+            crashPoint = parseFloat(((Math.random() * 4) + 1.05).toFixed(2));
+            document.getElementById('stage-status').innerText = 'Rocket is flying!';
+            document.getElementById('rocket-img').classList.add('flying');
+
+            const btn = document.getElementById('btn-place-bet');
+            if (isBetPlaced) {
+                btn.innerText = 'Cashout';
+                btn.classList.add('cashout');
+            } else {
+                btn.disabled = true;
+                btn.innerText = 'Flight in Progress';
             }
 
-            currentBalance -= betAmount;
-            balanceDisplay.innerText = currentBalance.toFixed(2);
+            gameLoopTimer = setInterval(() => {
+                currentMultiplier += 0.02;
+                document.getElementById('multiplier-text').innerText = 'x' + currentMultiplier.toFixed(2);
 
-            isPlaying = true;
-            multiplier = 1.00;
-            crashPoint = generateCrashPoint();
-            multiplierDisplay.innerText = 'x1.00';
-            multiplierDisplay.classList.remove('crashed');
-            multiplierDisplay.classList.add('growing');
-            rocketImg.style.display = 'block';
-            btnBet.style.display = 'none';
-            btnCashout.style.display = 'block';
+                // Simulate random cashouts for mock players
+                bets.forEach(b => {
+                    if (!b.mult && Math.random() < 0.08) {
+                        b.mult = currentMultiplier.toFixed(2);
+                    }
+                });
+                renderBets();
 
-            gameInterval = setInterval(() => {
-                multiplier += 0.01;
-                multiplierDisplay.innerText = 'x' + multiplier.toFixed(2);
-                
-                multiplierDisplay.classList.toggle('growing');
-
-                if (multiplier >= crashPoint) {
-                    clearInterval(gameInterval);
-                    isPlaying = false;
-                    multiplierDisplay.innerText = 'CRASHED';
-                    multiplierDisplay.classList.add('crashed');
-                    multiplierDisplay.classList.remove('growing');
-                    rocketImg.style.display = 'none';
-                    btnBet.style.display = 'block';
-                    btnCashout.style.display = 'none';
+                if (currentMultiplier >= crashPoint) {
+                    endFlightPhase();
                 }
-            }, 50);
+            }, 100);
+        }
+
+        function endFlightPhase() {
+            clearInterval(gameLoopTimer);
+            gamePhase = 'crashed';
+            document.getElementById('rocket-img').classList.remove('flying');
+            document.getElementById('multiplier-text').classList.add('crashed');
+            document.getElementById('multiplier-text').innerText = 'CRASHED';
+            document.getElementById('stage-status').innerText = `Crashed at x${crashPoint.toFixed(2)}`;
+
+            const btn = document.getElementById('btn-place-bet');
+            btn.disabled = true;
+            btn.classList.remove('cashout');
+            btn.innerText = 'Round Ended';
+
+            setTimeout(() => {
+                startBettingPhase();
+            }, 3000);
+        }
+
+        document.getElementById('btn-place-bet').addEventListener('click', () => {
+            if (gamePhase === 'waiting' && !isBetPlaced) {
+                const val = parseFloat(document.getElementById('bet-amount').value);
+                if (isNaN(val) || val <= 0) {
+                    alert('Enter valid bet amount');
+                    return;
+                }
+                if (val > userBalance) {
+                    alert('Insufficient funds!');
+                    return;
+                }
+                userBalance -= val;
+                currentBet = val;
+                isBetPlaced = true;
+                updateBalance();
+
+                const myName = user ? (user.first_name || 'You') : 'You';
+                bets.unshift({ name: myName + ' (You)', amount: val.toFixed(1), mult: null });
+                renderBets();
+
+                const btn = document.getElementById('btn-place-bet');
+                btn.innerText = 'Bet Placed (Waiting...)';
+                btn.disabled = true;
+            } else if (gamePhase === 'flying' && isBetPlaced && !isCashedOut) {
+                isCashedOut = true;
+                const winnings = currentBet * currentMultiplier;
+                userBalance += winnings;
+                updateBalance();
+
+                const myBet = bets.find(b => b.name.includes('(You)'));
+                if (myBet) myBet.mult = currentMultiplier.toFixed(2);
+                renderBets();
+
+                const btn = document.getElementById('btn-place-bet');
+                btn.innerText = `Cashed Out (+${winnings.toFixed(2)})`;
+                btn.classList.remove('cashout');
+                btn.disabled = true;
+            }
         });
 
-        btnCashout.addEventListener('click', () => {
-            if (!isPlaying) return;
+        function renderBets() {
+            const container = document.getElementById('bets-list');
+            container.innerHTML = '';
+            bets.forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'bet-item';
+                item.innerHTML = `
+                    <span class="bet-user">${b.name}</span>
+                    <div>
+                        <span class="bet-value">${b.amount} GRAM</span>
+                        ${b.mult ? `<span class="bet-mult"> @ x${b.mult}</span>` : ''}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
 
-            clearInterval(gameInterval);
-            isPlaying = false;
-
-            let currentBalance = parseFloat(balanceDisplay.innerText);
-            let winnings = betAmount * multiplier;
-            currentBalance += winnings;
-            balanceDisplay.innerText = currentBalance.toFixed(2);
-
-            alert('You cashed out at x' + multiplier.toFixed(2) + '! Won: ' + winnings.toFixed(2));
-            rocketImg.style.display = 'none';
-            btnBet.style.display = 'block';
-            btnCashout.style.display = 'none';
-        });
+        // Initialize Game
+        startBettingPhase();
     </script>
 </body>
 </html>
