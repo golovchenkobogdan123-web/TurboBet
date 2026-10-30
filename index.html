@@ -26,6 +26,8 @@
         tg.expand();
 
         const user = tg.initDataUnsafe.user;
+        console.log(user); // Виведення даних у консоль для перевірки
+
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
             
