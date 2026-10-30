@@ -486,9 +486,7 @@
         let crashPoint = 1.00;
         let gameLoopTimer = null;
         let countdownTimer = null;
-        let bets = [];
-
-        const mockPlayers = ['Alex', 'Dmitry', 'Satoshi', 'CryptoKing', 'Luna', 'VipPlayer', 'TraderX'];
+        let userBetRecord = null;
 
         const user = tg.initDataUnsafe.user;
         if (user) {
@@ -528,7 +526,7 @@
             userBalance += gramAdded;
             updateBalance();
             depositModal.style.display = 'none';
-            alert(`Succesfully added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars!`);
+            alert(`Demo Mode: Added ${gramAdded.toFixed(2)} GRAM for ${stars} Stars.\n\nNote: Real Telegram Stars payment requires server-side integration with the Telegram Bot API (createInvoiceLink) to process real payments.`);
         }
 
         function updateBalance() {
@@ -541,6 +539,7 @@
             currentMultiplier = 1.00;
             isBetPlaced = false;
             isCashedOut = false;
+            userBetRecord = null;
             
             document.getElementById('rocket-img').classList.remove('flying');
             document.getElementById('multiplier-text').classList.remove('crashed');
@@ -551,14 +550,6 @@
             btn.classList.remove('cashout');
             btn.disabled = false;
 
-            // Generate initial mock bets
-            bets = [];
-            const mockCount = Math.floor(Math.random() * 4) + 2;
-            for (let i = 0; i < mockCount; i++) {
-                const name = mockPlayers[Math.floor(Math.random() * mockPlayers.length)];
-                const amt = (Math.random() * 5 + 0.5).toFixed(1);
-                bets.push({ name: name, amount: amt, mult: null });
-            }
             renderBets();
 
             let countdown = 5;
@@ -582,6 +573,7 @@
 
             const btn = document.getElementById('btn-place-bet');
             if (isBetPlaced) {
+                btn.disabled = false;
                 btn.innerText = 'Cashout';
                 btn.classList.add('cashout');
             } else {
@@ -592,14 +584,6 @@
             gameLoopTimer = setInterval(() => {
                 currentMultiplier += 0.02;
                 document.getElementById('multiplier-text').innerText = 'x' + currentMultiplier.toFixed(2);
-
-                // Simulate random cashouts for mock players
-                bets.forEach(b => {
-                    if (!b.mult && Math.random() < 0.08) {
-                        b.mult = currentMultiplier.toFixed(2);
-                    }
-                });
-                renderBets();
 
                 if (currentMultiplier >= crashPoint) {
                     endFlightPhase();
@@ -642,7 +626,7 @@
                 updateBalance();
 
                 const myName = user ? (user.first_name || 'You') : 'You';
-                bets.unshift({ name: myName + ' (You)', amount: val.toFixed(1), mult: null });
+                userBetRecord = { name: myName + ' (You)', amount: val.toFixed(1), mult: null };
                 renderBets();
 
                 const btn = document.getElementById('btn-place-bet');
@@ -654,8 +638,7 @@
                 userBalance += winnings;
                 updateBalance();
 
-                const myBet = bets.find(b => b.name.includes('(You)'));
-                if (myBet) myBet.mult = currentMultiplier.toFixed(2);
+                if (userBetRecord) userBetRecord.mult = currentMultiplier.toFixed(2);
                 renderBets();
 
                 const btn = document.getElementById('btn-place-bet');
@@ -668,18 +651,18 @@
         function renderBets() {
             const container = document.getElementById('bets-list');
             container.innerHTML = '';
-            bets.forEach(b => {
+            if (userBetRecord) {
                 const item = document.createElement('div');
                 item.className = 'bet-item';
                 item.innerHTML = `
-                    <span class="bet-user">${b.name}</span>
+                    <span class="bet-user">${userBetRecord.name}</span>
                     <div>
-                        <span class="bet-value">${b.amount} GRAM</span>
-                        ${b.mult ? `<span class="bet-mult"> @ x${b.mult}</span>` : ''}
+                        <span class="bet-value">${userBetRecord.amount} GRAM</span>
+                        ${userBetRecord.mult ? `<span class="bet-mult"> @ x${userBetRecord.mult}</span>` : ''}
                     </div>
                 `;
                 container.appendChild(item);
-            });
+            }
         }
 
         // Initialize Game
