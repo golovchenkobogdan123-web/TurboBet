@@ -32,6 +32,9 @@
 
         const user = tg.initDataUnsafe.user;
         console.log(user); // Виведення даних у консоль для перевірки
+document.getElementById('daily-case-btn').addEventListener('click', () => {
+    alert('Кейс відкрито! Ви отримали бонуси.');
+});
 
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
