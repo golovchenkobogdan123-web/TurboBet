@@ -9,19 +9,28 @@
 </head>
 <body>
     <div class="app-container">
-        <div id="profile-section"></div>
+        <div id="profile-section">
+            <div class="user-info">
+                <div id="user-avatar" class="avatar"></div>
+                <div id="user-username" class="username">Завантаження...</div>
+            </div>
+            <div class="balance-container">
+                <div class="balance-title">Баланс:</div>
+                <div id="balance" class="balance-value">1000</div>
+            </div>
+        </div>
         <div id="game-container"></div>
     </div>
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const user = tg.initDataUnsafe.user;
-if (user) {
-    document.getElementById('user-username').innerText = user.username || user.first_name;
-    const initials = user.first_name.charAt(0);
-    document.getElementById('user-avatar').innerText = initials;
-}
 
+        const user = tg.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('user-username').innerText = user.username || user.first_name;
+            const initials = user.first_name.charAt(0);
+            document.getElementById('user-avatar').innerText = initials;
+        }
     </script>
 </body>
 </html>
