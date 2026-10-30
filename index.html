@@ -29,20 +29,14 @@
         if (user) {
             document.getElementById('user-username').innerText = user.username ? '@' + user.username : user.first_name;
             
-            // Отримуємо ініціали для аватарки
-            let initials = '';
+            let initials = '?';
             if (user.first_name) {
-                initials += user.first_name.charAt(0);
+                initials = user.first_name.charAt(0).toUpperCase();
+            } else if (user.username) {
+                initials = user.username.charAt(0).toUpperCase();
             }
-            if (user.last_name) {
-                initials += user.last_name.charAt(0);
-            }
-            
-            if (initials) {
-                document.getElementById('user-avatar').innerText = initials.toUpperCase();
-            } else {
-                document.getElementById('user-avatar').innerText = '?';
-            }
+
+            document.getElementById('user-avatar').innerText = initials;
         }
     </script>
 </body>
