@@ -306,11 +306,17 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
+        .controls-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
         .input-group {
             width: 100%;
             display: flex;
             gap: 10px;
-            margin-bottom: 12px;
         }
         .input-field {
             flex: 1;
@@ -321,6 +327,101 @@
             border-radius: 12px;
             font-size: 16px;
             outline: none;
+        }
+        .auto-cashout-panel {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .auto-cashout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        .auto-cashout-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 4px;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .auto-cashout-controls.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .btn-step {
+            background: #1e293b;
+            color: white;
+            border: 1px solid #334155;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-step:active {
+            background: #334155;
+        }
+        .mult-val-display {
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
         }
         .modal {
             position: fixed;
@@ -452,10 +553,27 @@
                 <div id="stage-status" class="status-text">Waiting for bets...</div>
             </div>
 
-            <div class="input-group">
-                <input type="number" id="bet-amount" class="input-field" placeholder="Bet amount (GRAM)" min="0.1" step="0.1" value="1.0">
-                <input type="number" id="auto-cashout" class="input-field" placeholder="Auto Cashout (x)" min="1.01" step="0.1">
+            <div class="controls-container">
+                <div class="input-group">
+                    <input type="number" id="bet-amount" class="input-field" placeholder="Bet amount (GRAM)" min="0.1" step="0.1" value="1.0">
+                </div>
+
+                <div class="auto-cashout-panel">
+                    <div class="auto-cashout-header">
+                        <span>Auto Cashout</span>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-cashout-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="auto-cashout-controls" id="auto-cashout-controls">
+                        <button class="btn-step" id="btn-mult-minus">-</button>
+                        <div class="mult-val-display"><span id="auto-cashout-val">1.50</span> x</div>
+                        <button class="btn-step" id="btn-mult-plus">+</button>
+                    </div>
+                </div>
             </div>
+
             <button id="btn-place-bet" class="btn-action">Place Bet</button>
 
             <div class="bets-container">
@@ -538,7 +656,7 @@
         let particleTimer = null;
         let countdownTimer = null;
         let userBetRecord = null;
-        let autoCashedOut = false;
+        let autoCashoutValue = 1.50;
 
         const user = tg.initDataUnsafe.user;
         if (user) {
@@ -546,6 +664,31 @@
             let initials = user.first_name ? user.first_name.charAt(0).toUpperCase() : '?';
             document.getElementById('user-avatar').innerText = initials;
         }
+
+        // Toggle Switch & Counter Logic
+        const autoCashoutToggle = document.getElementById('auto-cashout-toggle');
+        const autoCashoutControls = document.getElementById('auto-cashout-controls');
+        const autoCashoutValElem = document.getElementById('auto-cashout-val');
+
+        autoCashoutToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                autoCashoutControls.classList.add('active');
+            } else {
+                autoCashoutControls.classList.remove('active');
+            }
+        });
+
+        document.getElementById('btn-mult-minus').addEventListener('click', () => {
+            if (autoCashoutValue > 1.05) {
+                autoCashoutValue = parseFloat((autoCashoutValue - 0.1).toFixed(2));
+                autoCashoutValElem.innerText = autoCashoutValue.toFixed(2);
+            }
+        });
+
+        document.getElementById('btn-mult-plus').addEventListener('click', () => {
+            autoCashoutValue = parseFloat((autoCashoutValue + 0.1).toFixed(2));
+            autoCashoutValElem.innerText = autoCashoutValue.toFixed(2);
+        });
 
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -622,7 +765,6 @@
             isBetPlaced = false;
             isCashedOut = false;
             userBetRecord = null;
-            autoCashedOut = false;
             
             document.getElementById('rocket-img').classList.remove('flying');
             document.getElementById('multiplier-text').classList.remove('crashed');
@@ -670,11 +812,8 @@
                 currentMultiplier += 0.02;
                 document.getElementById('multiplier-text').innerText = 'x' + currentMultiplier.toFixed(2);
 
-                const autoCashoutVal = parseFloat(document.getElementById('auto-cashout').value);
-
-                if (isBetPlaced && !isCashedOut && !autoCashedOut && !isNaN(autoCashoutVal) && autoCashoutVal > 1.0) {
-                    if (currentMultiplier >= autoCashoutVal) {
-                        autoCashedOut = true;
+                if (isBetPlaced && !isCashedOut && autoCashoutToggle.checked) {
+                    if (currentMultiplier >= autoCashoutValue) {
                         triggerCashout();
                     }
                 }
