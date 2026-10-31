@@ -196,6 +196,15 @@
         .rocket-icon.loading {
             animation: spinRocket 2s linear infinite;
         }
+        .rocket-icon.crashed-anim {
+            animation: explode 0.5s ease-out forwards;
+            filter: drop-shadow(0 0 25px var(--danger));
+        }
+        @keyframes explode {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.6) rotate(15deg); opacity: 0.9; }
+            100% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+        }
         @keyframes spinRocket {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -948,6 +957,7 @@
             isCashedOut = false;
             
             const rocketImg = document.getElementById('rocket-img');
+            rocketImg.innerText = '🚀';
             rocketImg.className = 'rocket-icon loading';
             
             const multiplierText = document.getElementById('multiplier-text');
@@ -999,6 +1009,7 @@
             document.getElementById('stage-status').innerText = 'Rocket is flying!';
             
             const rocketImg = document.getElementById('rocket-img');
+            rocketImg.innerText = '🚀';
             rocketImg.className = 'rocket-icon flying';
             
             const multiplierText = document.getElementById('multiplier-text');
@@ -1045,7 +1056,10 @@
             clearInterval(gameLoopTimer);
             clearInterval(particleTimer);
             gamePhase = 'crashed';
-            document.getElementById('rocket-img').classList.remove('flying');
+            
+            const rocketImg = document.getElementById('rocket-img');
+            rocketImg.innerText = '💥';
+            rocketImg.className = 'rocket-icon crashed-anim';
             
             const multiplierText = document.getElementById('multiplier-text');
             multiplierText.classList.add('crashed');
@@ -1122,3 +1136,4 @@
     </script>
 </body>
 </html>
+```Ось оновлений код з доданою анімацією вибуху, яка спрацьовує при переході ракети в статус вибуху.
