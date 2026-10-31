@@ -175,7 +175,7 @@
             min-height: 220px;
             border: 1px solid #334155;
             position: relative;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             overflow: hidden;
         }
         .rocket-wrapper {
@@ -192,6 +192,13 @@
         .rocket-icon.flying {
             animation: floatRocket 1s ease-in-out infinite alternate;
             filter: drop-shadow(0 0 15px var(--primary));
+        }
+        .rocket-icon.loading {
+            animation: spinRocket 2s linear infinite;
+        }
+        @keyframes spinRocket {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         @keyframes floatRocket {
             0% { transform: translateY(0) rotate(0deg); }
@@ -236,16 +243,52 @@
             color: var(--primary);
             text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
             z-index: 2;
+            transition: all 0.3s ease;
         }
         .multiplier.crashed {
             color: var(--danger);
             text-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .multiplier.loading {
+            font-size: 32px;
+            color: var(--text-secondary);
+            text-shadow: none;
         }
         .status-text {
             color: var(--text-secondary);
             font-size: 14px;
             margin-top: 6px;
             z-index: 2;
+        }
+        .history-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 0 12px 0;
+            scrollbar-width: none;
+        }
+        .history-container::-webkit-scrollbar {
+            display: none;
+        }
+        .history-badge {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+        .history-badge.high {
+            color: var(--accent);
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+        .history-badge.low {
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.4);
         }
         .bets-container {
             width: 100%;
@@ -573,6 +616,8 @@
                 <div id="stage-status" class="status-text">Waiting for bets...</div>
             </div>
 
+            <div class="history-container" id="history-list"></div>
+
             <button id="btn-place-bet" class="btn-action">Place Bet</button>
 
             <div class="bets-container">
@@ -691,6 +736,7 @@
         let countdownTimer = null;
         let userBetRecord = null;
         let autoCashoutValue = 1.50;
+        let gameHistory = [];
 
         const user = tg.initDataUnsafe.user;
         if (user) {
@@ -879,15 +925,34 @@
             }, 600);
         }
 
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+            gameHistory.forEach(mult => {
+                const badge = document.createElement('div');
+                badge.className = 'history-badge';
+                if (mult >= 2.0) {
+                    badge.classList.add('high');
+                } else if (mult < 1.5) {
+                    badge.classList.add('low');
+                }
+                badge.innerText = `x${mult.toFixed(2)}`;
+                container.appendChild(badge);
+            });
+        }
+
         // Rocket Game Logic
         function startBettingPhase() {
             gamePhase = 'waiting';
             currentMultiplier = 1.00;
             isCashedOut = false;
             
-            document.getElementById('rocket-img').classList.remove('flying');
-            document.getElementById('multiplier-text').classList.remove('crashed');
-            document.getElementById('multiplier-text').innerText = 'x1.00';
+            const rocketImg = document.getElementById('rocket-img');
+            rocketImg.className = 'rocket-icon loading';
+            
+            const multiplierText = document.getElementById('multiplier-text');
+            multiplierText.className = 'multiplier loading';
+            multiplierText.innerText = 'Loading...';
             
             const btn = document.getElementById('btn-place-bet');
             btn.classList.remove('cancel');
@@ -932,7 +997,13 @@
             gamePhase = 'flying';
             crashPoint = parseFloat(((Math.random() * 4) + 1.05).toFixed(2));
             document.getElementById('stage-status').innerText = 'Rocket is flying!';
-            document.getElementById('rocket-img').classList.add('flying');
+            
+            const rocketImg = document.getElementById('rocket-img');
+            rocketImg.className = 'rocket-icon flying';
+            
+            const multiplierText = document.getElementById('multiplier-text');
+            multiplierText.className = 'multiplier';
+            multiplierText.innerText = 'x1.00';
 
             const btn = document.getElementById('btn-place-bet');
             if (isBetPlaced) {
@@ -975,9 +1046,18 @@
             clearInterval(particleTimer);
             gamePhase = 'crashed';
             document.getElementById('rocket-img').classList.remove('flying');
-            document.getElementById('multiplier-text').classList.add('crashed');
-            document.getElementById('multiplier-text').innerText = 'CRASHED';
+            
+            const multiplierText = document.getElementById('multiplier-text');
+            multiplierText.classList.add('crashed');
+            multiplierText.innerText = 'CRASHED';
+            
             document.getElementById('stage-status').innerText = `Crashed at x${crashPoint.toFixed(2)}`;
+
+            gameHistory.unshift(crashPoint);
+            if (gameHistory.length > 10) {
+                gameHistory.pop();
+            }
+            renderHistory();
 
             const btn = document.getElementById('btn-place-bet');
             if (isNextRoundBetPlaced) {
