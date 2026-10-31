@@ -731,7 +731,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let userBalance = 0.00;
+        let userBalance = parseFloat(localStorage.getItem('turbobet_balance')) || 0.00;
         let isBetPlaced = false;
         let isNextRoundBetPlaced = false;
         let nextRoundBetAmount = 0.00;
@@ -902,6 +902,7 @@
 
         function updateBalance() {
             document.getElementById('balance').innerText = userBalance.toFixed(2) + ' GRAM';
+            localStorage.setItem('turbobet_balance', userBalance.toFixed(2));
         }
 
         function spawnParticle() {
@@ -1132,8 +1133,8 @@
         }
 
         // Initialize Game
+        updateBalance();
         startBettingPhase();
     </script>
 </body>
 </html>
-
